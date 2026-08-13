@@ -83,3 +83,18 @@ class IncomeAllocation(models.Model):
 
     def __str__(self):
         return f"{self.income} -> {self.get_subgroup_display()}: {self.amount}"
+
+class Expense(models.Model):
+    """One expense entry for one campus.The
+    report step later subtracts these from that campuse's income
+    local_total only."""
+    campus = models.ForeignKey(Campus, on_delete=models.CASCADE, related_name='expenses')
+    description = models.CharField(max_length=200, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.campus} - {self.amount} ({self.date})"
+
+
+    

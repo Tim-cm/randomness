@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.db import IntegrityError
-from .models import Campus, SplitRule, Income
+from .models import Campus, SplitRule, Income, Expense
 
 from decimal import Decimal
 
@@ -97,3 +97,27 @@ class IncomeSplitTests(TestCase):
         income.apply_split_rules()
         income.apply_split_rules()
         self.assertEqual(income.allocations.count(), 3)
+
+class ExpenseModelTests(TestCase):
+    def test_expense_created_for_campus(self):
+        camp = Campus.objects.create(name="camp A")
+        expense = Expense.objects.create(campus=camp, amount=Decimal('300.00'), description="Food")
+        self.assertEqual(expense.campus, camp)
+        self.assertEqual(expense.amount, Decimal('300.00'))
+
+    def test_expenses_are_campus_specfic(self):
+        camp_a = Campus.objects.create(name="Camp A")
+        camp_b = Campus.objects.create(name="Camp B")
+        Expense.objects.create(campus=camp_a, amount=Decimal('100.00'))
+        Expense.objects.create(campus=camp_b, amount=Decimal('50.00'))
+        Expense.objects.create(campus=camp_b, amount=Decimal('25.00'))
+
+        self.assertEqual(camp_a.expenses.count(), 1)
+        self.assertEqual(camp_b.expenses.count(), 2)
+        self.assertEqual(camp_a.expenses.first().amount, Decimal('100.00'))
+
+    def test_deleting_campus_deletes_its_expenses(self):
+        camp = Campus.objects.create(name="Camp A")
+        Expense.objects.create(campus=camp, amount=Decimal('100.00'))
+        camp.delete()
+        self.assertEqual(Expense.objects.count(), 0)
