@@ -4,6 +4,9 @@ from .models import Campus, SplitRule, Income, Expense
 
 from decimal import Decimal
 
+from datetime import date, timedelta
+from .reports import generate_report
+
 
 class CampusModelTests(TestCase):
     def test_campus_created_with_name(self):
@@ -121,3 +124,70 @@ class ExpenseModelTests(TestCase):
         Expense.objects.create(campus=camp, amount=Decimal('100.00'))
         camp.delete()
         self.assertEqual(Expense.objects.count(), 0)
+
+class ReportTests(TestCase):
+    def setUp(self):
+        self.camp_a = Campus.objects.create(name='Camp A')
+        self.camp_b = Campus.objects.create(name='Camp B')
+        SplitRule.objects.create(income_group='TITHE', subgroup='local', percent=Decimal('50.00'))
+        SplitRule.objects.create(income_group='TITHE', subgroup='overall', percent=Decimal('25.00'))
+        SplitRule.objects.create(income_group='TITHE', subgroup='ckc', percent=Decimal('25.00'))
+
+    def _income(self, camp, amount, on_date):
+        income = Income.objects.create(campus=camp, income_group='TITHE', amount=Decimal(amount))
+        income.apply_split_rules()
+        Income.objects.filter(pk=income.pk).update(date=on_date)
+        return income
+
+    def test_report_excludes_other_campus_data(self):
+        self._income(self.camp_a, '1000.00', date(2026, 1, 10))
+        self._income(self.camp_b, '5000.00', date(2026, 1, 10))
+        Expense.objects.filter
+
+        report = generate_report(self.camp_a, date(2026, 1, 1), date(2026, 1, 31))
+        self.assertEqual(report['total_income'], Decimal('1000.00'))
+
+    def test_date_range_boundaries_are_inclusive_and_exclusive_correctly(self):
+        self._income(self.camp_a, '100.00', date(2026, 1, 1)) # exactly on start
+        self._income(self.camp_a, '200.00', date(2026, 1, 31)) # exactly on end
+        self._income(self.camp_a, '300.00', date(2025, 12, 31)) # one day before start
+        self._income(self.camp_a, '400.00', date(2026, 2, 1)) # one day after end
+
+        report = generate_report(self.camp_a, date(2026, 1, 1), date(2026, 1, 31))
+        self.assertEqual(report['total_income'], Decimal('300.00'))
+
+    def test_expenses_reduce_local_total_only(self):
+        self._income(self.camp_a, '1000.00', date(2026, 1, 10))
+
+        expense = Expense.objects.create(campus=self.camp_a, amount=Decimal('100.00'))
+        Expense.objects.filter(pk=expense.pk).update(date=date(2026, 1, 15))
+
+        report = generate_report(self.camp_a, date(2026, 1, 1), date(2026, 1, 31))
+        self.assertEqual(report['local_total'], Decimal('400.00'))
+        self.assertEqual(report['overall_total'], Decimal('250.00'))
+        self.assertEqual(report['ckc_total'], Decimal('250.00'))
+
+    def test_opening_balance_reflects_only_this_campus_prior_history(self):
+        #Camp A history before the report range
+        self._income(self.camp_a, '1000.00', date(2025, 12, 1))
+        old_expense = Expense.objects.create(campus=self.camp_a, amount=Decimal('50.00'))
+        Expense.objects.filter(pk=old_expense.pk).update(date=date(2025, 12, 5))
+
+        report_before = generate_report(self.camp_a, date(2026, 1, 1), date(2026, 1, 31))
+        self.assertEqual(report_before['opening_balance'], Decimal('450.00'))
+
+        # On addition of camp B's activity in the same prior period camp B's opening balance does not change
+        self._income(self.camp_b, '9000.00', date(2025, 12, 1))
+        Expense.objects.create(campus=self.camp_b, amount=Decimal('999.00'))
+
+        report_after = generate_report(self.camp_a, date(2026, 1, 1), date(2026, 1, 31))
+        self.assertEqual(report_after['opening_balance'], Decimal('450.00'))
+
+    def test_closing_balance_equals_opening_plus_local_total(self):
+        self._income(self.camp_a, '1000.00', date(2025, 12, 1))
+        self._income(self.camp_a, '2000.00', date(2026, 1, 10))
+
+        report = generate_report(self.camp_a, date(2026, 1, 1), date(2026, 1, 31))
+        self.assertEqual(report['opening_balance'], Decimal('500.00'))
+        self.assertEqual(report['local_total'], Decimal('1000.00'))
+        self.assertEqual(report['closing_balance'], Decimal('1500.00'))
