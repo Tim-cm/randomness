@@ -239,3 +239,44 @@ class DashboardViewtests(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Income.objects.count(), 0)
+
+class ReportViewTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.camp = Campus.objects.create(name="Camp A")
+        SplitRule.objects.create(income_group='TITHE', subgroup='local', percent=Decimal('50.00'))
+        SplitRule.objects.create(income_group='TITHE', subgroup='overall', percent=Decimal('25.00'))
+        SplitRule.objects.create(income_group='TITHE', subgroup='ckc', percent=Decimal('25.00'))
+        income = Income.objects.create(campus=self.camp, income_group='TITHE', amount=Decimal('1000.00'))
+        income.apply_split_rules()
+        Income.objects.filter(pk=income.pk).update(date=date(2026, 1, 10))
+
+    def test_report_page_with_no_params_shows_empty_form(self):
+        response = self.client.get('/report/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context['report'])
+
+    def test_report_page_with_valid_params_shows_totals(self):
+        response = self.client.get('/report/', { 'campus': self.camp.pk, 'start_date': '2026-01-01', 'end_date': '2026-01-31' })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['report']['total_income'], Decimal('1000.00'))
+        self.assertEqual(response.context['report']['local_total'], Decimal('500.00'))
+
+    def test_report_page_with_start_after_end_shows_error(self):
+        response = self.client.get('/report/', { 'campus': self.camp.pk, 'start_date': '2026-01-31', 'end_date': '2026-01-01' })
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context['report'])
+        self.assertTrue(response.context['form'].errors)
+
+    def test_download_returns_text_file_with_correct_content(self):
+        response = self.client.get('/report/download/', { 'campus': self.camp.pk, 'start_date': '2026-01-01', 'end_date': '2026-01-31'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/plain')
+        self.assertIn('attachment', response['Content-Disposition'])
+        content = response.content.decode()
+        self.assertIn('Total income: 1000', content)
+        self.assertIn('Local total: 500.00', content)
+
+    def test_download_with_invalid_params_redirects(self):
+        response = self.client.get('/report/download/')
+        self.assertEqual(response.status_code, 302)

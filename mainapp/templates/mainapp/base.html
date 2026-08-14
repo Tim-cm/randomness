@@ -19,7 +19,8 @@
 </head>
 <body>
     <h1>Campus Ledger</h1>
-
+    <p><a href="{% url 'dashboard' %}">Dashboard</a> | <a href="{% url 'report' %}">Report</a></p>
+    
     {% if messages %}
     <ul class="messages">
         {% for m in messages %}

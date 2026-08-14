@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
-from .forms import IncomeForm, ExpenseForm
+from .forms import IncomeForm, ExpenseForm, ReportForm
 from .models import Campus, Income, Expense
+
+from django.http import HttpResponse
+from .reports import generate_report
 
 def dashboard(request):
     if request.method == 'POST':
@@ -36,3 +39,44 @@ def dashboard(request):
          'recent_expenses': Expense.objects.select_related('campus').order_by('-id')[:10]
     }
     return render(request, 'mainapp/dashboard.html', context)
+
+def _run_report_from_get(request):
+    """Shared by both the on-screen report and the .txt download.
+    Returns (form, report_dict_or_None)."""
+    form = ReportForm(request.GET or None)
+    report = None
+    if request.GET and form.is_valid():
+         report = generate_report(
+              campus=form.cleaned_data['campus'],
+              start_date=form.cleaned_data['start_date'],
+              end_date=form.cleaned_data['end_date'],
+         )
+    return form, report
+
+def report(request):
+     form, report_data = _run_report_from_get(request)
+     return render(request, 'mainapp/report.html', {'form': form, 'report': report_data, 'query_string': request.GET.urlencode()})
+
+def report_download(request):
+     form, report_data = _run_report_from_get(request)
+     if report_data is None:
+          return redirect('report')
+
+     lines = [
+          f"Report for: {report_data['campus']}",
+          f"Period: {report_data['start_date']} to {report_data['end_date']}",
+          ""
+          f"Total income: {report_data['total_income']}",
+          f"Local total: {report_data['local_total']}",
+          f"Overall total: {report_data['overall_total']}",
+          f"Ckc total: {report_data['ckc_total']}",
+          f"Total expenses: {report_data['total_expenses']}",
+          f"Opening balance: {report_data['opening_balance']}",    
+          f"Closing balance: {report_data['closing_balance']}",         
+     ]
+     content = "\n".join(lines)
+
+     response = HttpResponse(content, content_type='text/plain')
+     filename = f"report_{report_data['campus'].name}_{report_data['start_date']}_{report_data['end_date']}.txt"
+     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+     return response

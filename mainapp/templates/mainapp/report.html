@@ -1,0 +1,36 @@
+{% extends 'mainapp/base.html' %}
+
+{% block title %}Report — Campus Ledger{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Generate Report</h2>
+    <form method="get">
+        <label>Campus</label>{{ form.campus }}
+        <label>Start Date</label>{{ form.start_date }}
+        <label>End Date</label>{{ form.end_date }}
+        <button type="submit">Run Report</button>
+    </form>
+    {% if form.errors %}
+    <p style="color:red;">{{ form.non_field_errors }}{{ form.errors }}</p>
+    {% endif %}
+</div>
+
+{% if report %}
+<div class="card">
+    <h2>{{ report.campus }} — {{ report.start_date }} to {{ report.end_date }}</h2>
+    <table>
+        <tr><th>Total income</th><td>{{ report.total_income }}</td></tr>
+        <tr><th>Local total (local − expenses)</th><td>{{ report.local_total }}</td></tr>
+        <tr><th>Overall total</th><td>{{ report.overall_total }}</td></tr>
+        <tr><th>Ckc total</th><td>{{ report.ckc_total }}</td></tr>
+        <tr><th>Total expenses</th><td>{{ report.total_expenses }}</td></tr>
+        <tr><th>Opening balance</th><td>{{ report.opening_balance }}</td></tr>
+        <tr><th>Closing balance</th><td>{{ report.closing_balance }}</td></tr>
+    </table>
+    <p><a href="{% url 'report_download' %}?{{ query_string }}">Download as .txt</a></p>
+</div>
+{% endif %}
+
+{% endblock %}
