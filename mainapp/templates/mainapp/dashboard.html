@@ -1,0 +1,55 @@
+{% extends 'mainapp/base.html' %}
+
+{% block title %}Dashboard — Campus Ledger{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h2>Add Income</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form_name" value="income">
+        <label>Campus</label>{{ income_form.campus }}
+        <label>Income Group</label>{{ income_form.income_group }}
+        <label>Amount</label>{{ income_form.amount }}
+        <button type="submit">Add Income</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Add Expense</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form_name" value="expense">
+        <label>Campus</label>{{ expense_form.campus }}
+        <label>Description</label>{{ expense_form.description }}
+        <label>Amount</label>{{ expense_form.amount }}
+        <button type="submit">Add Expense</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Recent Income</h2>
+    <table>
+        <tr><th>campus</th><th>Group</th><th>Amount</th><th>Date</th></tr>
+        {% for i in recent_incomes %}
+        <tr><td>{{ i.campus }}</td><td>{{ i.get_income_group_display }}</td><td>{{ i.amount }}</td><td>{{ i.date }}</td></tr>
+        {% empty %}
+        <tr><td colspan="4">No income yet.</td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>Recent Expenses</h2>
+    <table>
+        <tr><th>campus</th><th>Description</th><th>Amount</th><th>Date</th></tr>
+        {% for e in recent_expenses %}
+        <tr><td>{{ e.campus }}</td><td>{{ e.description }}</td><td>{{ e.amount }}</td><td>{{ e.date }}</td></tr>
+        {% empty %}
+        <tr><td colspan="4">No expenses yet.</td></tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

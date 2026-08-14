@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.db import IntegrityError
 from .models import Campus, SplitRule, Income, Expense
 
@@ -191,3 +191,51 @@ class ReportTests(TestCase):
         self.assertEqual(report['opening_balance'], Decimal('500.00'))
         self.assertEqual(report['local_total'], Decimal('1000.00'))
         self.assertEqual(report['closing_balance'], Decimal('1500.00'))
+
+
+class DashboardViewtests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.camp = Campus.objects.create(name="Camp A")
+        SplitRule.objects.create(income_group='TITHE', subgroup='local', percent=Decimal('50.00'))
+        SplitRule.objects.create(income_group='TITHE', subgroup='overall', percent=Decimal('30.00'))
+        SplitRule.objects.create(income_group='TITHE', subgroup='ckc', percent=Decimal('20.00'))
+
+    def test_dashboard_get_returns_200(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_posting_income_creates_income_and_allocations(self):
+        response = self.client.post('/', {
+            'form_name': 'income',
+            'campus': self.camp.pk,
+            'income_group': 'TITHE',
+            'amount': '1000.00',
+        })
+        self.assertEqual(response.status_code, 302) # redirected back to dashboard
+        income = Income.objects.get(campus=self.camp)
+        self.assertEqual(income.amount, Decimal('1000.00'))
+        self.assertEqual(income.allocations.count(), 3)
+        local = income.allocations.get(subgroup='local')
+        self.assertEqual(local.amount, Decimal('500.00'))
+
+    def test_posting_expense_creates_expense(self):
+        response = self.client.post('/', {
+            'form_name': 'expense',
+            'campus': self.camp.pk,
+            'description': 'P.A',
+            'amount': '250.00',
+        })
+        self.assertEqual(response.status_code, 302)
+        expense = Expense.objects.get(campus=self.camp)
+        self.assertEqual(expense.amount, Decimal('250.00'))
+
+    def test_posting_invalid_income_does_not_crash_or_save(self):
+        response =self.client.post('/', {
+            'form_name': 'income',
+            'campus': self.camp.pk,
+            'income_group': 'TITHE',
+            'amount': '' # missing required amount
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Income.objects.count(), 0)

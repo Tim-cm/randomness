@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Campus Ledger{% endblock %}</title>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; }
+        .card { border: 1px solid #ccc; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+        label { display: block; margin-top: 8px; font-weight: bold; }
+        input, select { width: 100%; padding: 6px; margin-top: 4px; }
+        button { margin-top: 12px; padding: 8px 16px; }
+        .messages { list-style: none; padding: 0; }
+        .messages li.success { color: green; }
+        .messages li.error { color: red; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border-bottom: 1px solid #ddd; padding: 6px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Campus Ledger</h1>
+
+    {% if messages %}
+    <ul class="messages">
+        {% for m in messages %}
+        <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</body>
+</html>
