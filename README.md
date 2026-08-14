@@ -35,13 +35,7 @@ Creates the SQLite database file and all required tables.
 python manage.py createsuperuser
 Prompts for username, email, and password. Used to log into /admin/.
 
-8. ADD STARTING DATA
-Run the server (next step), go to /admin/, log in, and add:
-- Organizations (your 5 organizations)
-- Split rules (percentages for each income group TITHE/COMBINED_OFFERING/LCB_OFFERING/LOOSE_OFFERING, subgroups local/overall/ckc)
-This data is required before adding income, since income splitting depends on it.
-
-9. RUN THE DEVELOPMENT SERVER
+8. RUN THE DEVELOPMENT SERVER
 python manage.py runserver
 Starts the site at http://127.0.0.1:8000/
 
