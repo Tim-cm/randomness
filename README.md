@@ -41,7 +41,7 @@ Starts the site at http://127.0.0.1:8000/
 
 Admin: http://127.0.0.1:8000/admin/
 go to /admin/, log in, and add:
-- Campuses (your 5 campuses)
+- Campuses (your 5 campuses e.g. Main Campus, Chiromo campus, KNH Campus etc)
 - Split rules (percentages for each income group TITHE/COMBINED_OFFERING/LCB_OFFERING/LOOSE_OFFERING, subgroups local/overall/ckc)
 This data is required before adding income, since income splitting depends on it.
 
