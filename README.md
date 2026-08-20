@@ -6,35 +6,38 @@ Python 3.x installed on your machine.
 1. CREATE PROJECT FOLDER
 mkdir simpleProj(Creates the top-level folder)
 cd simpleProj(moves into the top-level folder created)
+download the whole project folder under code in github as a zip file.
+Extract this zipfile in the folder simpleProj created
+The simpleProj folder should contain the config folder, mainapp folder and the files : .gitignore, README.md, manage.py and requirements.txt
 
-2. CREATE VIRTUAL ENVIRONMENT
+3. CREATE VIRTUAL ENVIRONMENT
 python3 -m venv .venv(on linux and mac)
 python -m venv .venv(on windows cmd or powershell)
 (Creates an isolated Python environment named .venv, used to keep this project's packages separate from other projects.)
 
-3. ACTIVATE THE VIRTUAL ENVIRONMENT
+4. ACTIVATE THE VIRTUAL ENVIRONMENT
 mac/Linux: source .venv/bin/activate
 Windows(PowerShell): .venv\Scripts\Activate.ps1
 Windows(cmd): .venv\Scripts\activate.bat
 (Must be run in every new terminal session before using pip or python for this project.)
 
-4. UPGRADE PIP
+5. UPGRADE PIP
 python -m pip install --upgrade pip
 (Updates pip to its latest version to avoid installation errors.)
 
-5. INSTALL FROM REQUIREMENTS
+6. INSTALL FROM REQUIREMENTS
 pip install -r requirements.txt
 (Installs every package listed in requirements.txt at the recorded versions.)
 
-6. APPLY DATABASE MIGRATIONS
+7. APPLY DATABASE MIGRATIONS
 python manage.py migrate
 (Creates the SQLite database file and all required tables.)
 
-7. CREATE AN ADMIN LOGIN
+8. CREATE AN ADMIN LOGIN
 python manage.py createsuperuser
 (Prompts for username, email, and password. Used to log into /admin/.)
 
-8. RUN THE DEVELOPMENT SERVER
+9. RUN THE DEVELOPMENT SERVER
 python manage.py runserver
 (Starts the site at http://127.0.0.1:8000/)
 
